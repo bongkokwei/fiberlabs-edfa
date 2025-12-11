@@ -17,3 +17,6 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/yourusername/edfa-controller"
+
+[tool.setuptools.packages.find]
+where = ["src"]
