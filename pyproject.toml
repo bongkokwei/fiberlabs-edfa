@@ -50,7 +50,7 @@ Repository = "https://github.com/bongkokwei/edfa-controller"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["edfa-controller"]
+packages = ["edfa_controller"]
 
 [tool.setuptools.package-data]
 edfa_controller = ["*.md", "*.pdf"]
