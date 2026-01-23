@@ -78,35 +78,79 @@ class EDFAController:
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
 
-    def _send_command(self, command: str) -> str:
+    def _send_command(
+        self,
+        command: str,
+        max_retries: int = 5,
+        retry_delay: float = 0.1,
+    ) -> str:
         """
-        Send command and receive response
+        Send command and receive response with automatic retry
 
         Args:
             command: Command string without delimiter
+            max_retries: Maximum number of retry attempts (default: 5)
+            retry_delay: Initial delay between retries in seconds (default: 0.1)
 
         Returns:
             Response string from device
+
+        Raises:
+            ConnectionError: If serial connection not open or lost
+            ValueError: If device returns error after all retries
+            TimeoutError: If device doesn't respond after all retries
         """
         if not self.serial_conn or not self.serial_conn.is_open:
             raise ConnectionError("Serial connection not open")
 
-        # Clear input buffer
-        self.serial_conn.reset_input_buffer()
+        last_exception = None
+        current_delay = retry_delay
 
-        # Send command with delimiter
-        full_command = command + self.delimiter
-        self.serial_conn.write(full_command.encode("ascii"))
+        for attempt in range(1, max_retries + 1):
+            try:
+                # Clear buffers to remove stale data
+                self.serial_conn.reset_input_buffer()
+                self.serial_conn.reset_output_buffer()
 
-        # Read response until delimiter
-        response = self.serial_conn.read_until(self.delimiter.encode("ascii"))
-        response = response.decode("ascii").strip()
+                # Small stabilisation delay
+                time.sleep(0.02)
 
-        # Check for error messages
-        if response.startswith("!!") or response.startswith("??"):
-            raise ValueError(f"Device error: {response}")
+                # Send command with delimiter
+                full_command = command + self.delimiter
+                self.serial_conn.write(full_command.encode("ascii"))
+                self.serial_conn.flush()
 
-        return response
+                # Read response until delimiter
+                response = (
+                    self.serial_conn.read_until(self.delimiter.encode("ascii"))
+                    .decode("ascii")
+                    .strip()
+                )
+
+                # Check for empty response (timeout)
+                if not response:
+                    raise TimeoutError(f"No response for command: {command}")
+
+                # Check for device error messages
+                if response.startswith("!!") or response.startswith("??"):
+                    raise ValueError(f"Device error: {response}")
+
+                # Success
+                return response
+
+            except serial.SerialException as e:
+                last_exception = ConnectionError(f"Serial communication failed: {e}")
+
+            except (ValueError, TimeoutError) as e:
+                last_exception = e
+
+            # Retry with exponential backoff
+            if attempt < max_retries:
+                time.sleep(current_delay)
+                current_delay *= 1.5
+
+        # All retries exhausted
+        raise last_exception
 
     # ========== MONITOR COMMANDS ==========
 
