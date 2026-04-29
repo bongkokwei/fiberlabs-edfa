@@ -11,6 +11,7 @@ requires-python = ">=3.7"
 authors = [{name = "bongkokwei", email = "your.email@example.com"}]
 dependencies = [
     "pyserial>=3.4",
+    "PyQt5>=5.15.0",
 ]
 
 [project.urls]
