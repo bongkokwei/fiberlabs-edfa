@@ -4,15 +4,19 @@ Minimal script to query FiberLabs EDFA identification.
 Usage: python3 edfa_idn_simple.py [PORT] [BAUD]
 """
 
+import logging
 import serial
 import time
 import sys
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Default settings
 PORT = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyUSB0"
 BAUD = int(sys.argv[2]) if len(sys.argv) > 2 else 57600
 
-print(f"Connecting to {PORT} at {BAUD} baud...")
+logger.info(f"Connecting to {PORT} at {BAUD} baud...")
 
 try:
     # Open serial connection
@@ -33,7 +37,7 @@ try:
 
     # Send *IDN? command
     command = b"*IDN?\r"
-    print(f"Sending: {repr(command)}")
+    logger.info(f"Sending: {repr(command)}")
     ser.write(command)
     ser.flush()
 
@@ -42,20 +46,21 @@ try:
 
     if ser.in_waiting > 0:
         response = ser.read(ser.in_waiting).decode("ascii", errors="ignore")
-        print(f"\nReceived ({len(response)} bytes):")
-        print(response)
+        logger.info(f"Received ({len(response)} bytes):\n{response}")
     else:
-        print("No response received.")
+        logger.warning("No response received.")
 
     ser.close()
 
 except serial.SerialException as e:
-    print(f"Serial port error: {e}")
-    print(f"\nTip: On Linux, you might need:")
-    print(f"  sudo chmod 666 {PORT}")
-    print(f"  or add yourself to the dialout group:")
-    print(f"  sudo usermod -a -G dialout $USER")
+    logger.error(f"Serial port error: {e}")
+    logger.info(
+        f"Tip: On Linux, you might need:\n"
+        f"  sudo chmod 666 {PORT}\n"
+        f"  or add yourself to the dialout group:\n"
+        f"  sudo usermod -a -G dialout $USER"
+    )
     sys.exit(1)
 except Exception as e:
-    print(f"Error: {e}")
+    logger.error(f"Error: {e}")
     sys.exit(1)
