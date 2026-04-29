@@ -5,10 +5,13 @@ Control Desktop Optical Fibre Amplifier via RS232 interface
 Based on FiberLabs Programming Manual v4.0
 """
 
+import logging
 import serial
 import time
 from typing import Optional, Dict, List, Tuple, Union
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class DrivingMode(Enum):
@@ -67,10 +70,10 @@ class EDFAController:
                 timeout=self.timeout,
             )
             time.sleep(0.1)  # Allow connection to stabilise
-            print("Connected to EDFA")
+            logger.info("Connected to EDFA")
             return True
         except serial.SerialException as e:
-            print(f"Error connecting to {self.port}: {e}")
+            logger.error(f"Error connecting to {self.port}: {e}")
             return False
 
     def disconnect(self):
@@ -661,45 +664,47 @@ class EDFAController:
 # ========== EXAMPLE USAGE ==========
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     # Example usage
     PORT = "COM6"  # Change to your port (e.g., "COM3" on Windows)
 
     # Using context manager for automatic connection handling
     with EDFAController(PORT, baudrate=57600, delimiter="CR") as edfa:
-        print("Connected to EDFA")
+        logger.info("Connected to EDFA")
 
         # Get device information
-        print(f"Device: {edfa.get_identification()}")
+        logger.info(f"Device: {edfa.get_identification()}")
 
         # Monitor parameters
-        print(f"\nOutput levels: {edfa.get_output_level()} dBm")
-        print(f"Input levels: {edfa.get_input_level()} dBm")
-        print(f"Case temperature: {edfa.get_case_temperature():.1f} °C")
-        print(f"LD1 current: {edfa.get_ld_current(1):.1f} mA")
+        logger.info(f"Output levels: {edfa.get_output_level()} dBm")
+        logger.info(f"Input levels: {edfa.get_input_level()} dBm")
+        logger.info(f"Case temperature: {edfa.get_case_temperature():.1f} °C")
+        logger.info(f"LD1 current: {edfa.get_ld_current(1):.1f} mA")
 
         # Check alarm status
         alarms = edfa.get_alarm_status()
-        print(f"\nAlarm status: {alarms}")
+        logger.info(f"Alarm status: {alarms}")
 
         # Set driving mode to ALC for channel 1
         edfa.set_driving_mode(1, DrivingMode.ALC)
-        print(f"Channel 1 mode: {edfa.get_driving_mode(1)}")
+        logger.info(f"Channel 1 mode: {edfa.get_driving_mode(1)}")
 
         # Set output level (temporary)
         edfa.set_alc_output_level(1, 10.0)
-        print(f"ALC setting: {edfa.get_alc_output_level(1):.1f} dBm")
+        logger.info(f"ALC setting: {edfa.get_alc_output_level(1):.1f} dBm")
 
         # Turn on output
         edfa.set_output_active(True)
-        print("Output activated")
+        logger.info("Output activated")
 
         # Wait and monitor
         time.sleep(2)
-        print(f"Output level after activation: {edfa.get_output_level()[0]:.2f} dBm")
+        logger.info(f"Output level after activation: {edfa.get_output_level()[0]:.2f} dBm")
 
         # Save settings if needed
         # edfa.save_settings()  # Be cautious with this
 
         # Turn off output
         edfa.set_output_active(False)
-        print("Output deactivated")
+        logger.info("Output deactivated")
