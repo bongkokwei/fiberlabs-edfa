@@ -39,7 +39,6 @@ from PyQt5.QtWidgets import (
 
 from .edfa_controller import EDFAController, DrivingMode
 
-
 # ==================================================================
 # Worker-thread command objects
 # ==================================================================
@@ -130,7 +129,7 @@ class EDFAWorker(QObject):
     POLL_INTERVAL_MS = 1000
     CMD_DRAIN_INTERVAL_MS = 50
 
-    def __init__(self, num_channels: int = 4):
+    def __init__(self, num_channels: int = 2):
         super().__init__()
         self._num_channels = num_channels
         self._edfa: Optional[EDFAController] = None
@@ -494,6 +493,9 @@ class EDFAMainWindow(QMainWindow):
         self._output_active = False
         self._connected = False
 
+        self.channel_width = 240
+        self.setMaximumWidth(self.channel_width * self.num_channels + 60)
+
         self._build_ui()
         self._start_worker()
 
@@ -548,13 +550,14 @@ class EDFAMainWindow(QMainWindow):
         box = QGroupBox("Connection")
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Port:"))
-        self.port_edit = QLineEdit("/dev/ttyUSB0")
+        self.port_edit = QLineEdit("COM6")
         self.port_edit.setMaximumWidth(160)
         layout.addWidget(self.port_edit)
 
         layout.addWidget(QLabel("Baud:"))
         self.baud_combo = QComboBox()
         self.baud_combo.addItems(["9600", "19200", "38400", "57600"])
+        self.baud_combo.setCurrentText("57600")
         layout.addWidget(self.baud_combo)
 
         layout.addWidget(QLabel("Delimiter:"))
@@ -582,7 +585,7 @@ class EDFAMainWindow(QMainWindow):
         self.output_btn.setMinimumHeight(50)
         self.output_btn.setStyleSheet(self._output_btn_style(False))
         self.output_btn.clicked.connect(self._on_output_toggled)
-        layout.addWidget(self.output_btn, stretch=2)
+        layout.addWidget(self.output_btn, stretch=4)
 
         self.emergency_btn = QPushButton("EMERGENCY OFF")
         self.emergency_btn.setMinimumHeight(50)
@@ -818,7 +821,7 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
 
-    window = EDFAMainWindow(num_channels=4)
+    window = EDFAMainWindow(num_channels=2)
     window.resize(1100, 600)
     window.show()
 
