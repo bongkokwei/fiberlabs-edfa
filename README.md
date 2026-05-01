@@ -80,6 +80,11 @@ with EDFAController("/dev/ttyUSB0", baudrate=9600) as edfa:
     edfa.set_output_active(True)
 ```
 
+### Running the GUI
+```python
+python -m fiberlabs_edfa.gui
+```
+
 ### Manual Connection Management
 
 ```python
